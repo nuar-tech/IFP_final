@@ -1,0 +1,42 @@
+@* src/SprintBoard.Client/Components/WorkloadHeatmap.razor *@
+<section class="heatmap @(Theme?.Dark == true ? "on-dark" : null)" aria-label="Team workload">
+    <h2>Workload (open hours)</h2>
+
+    @foreach (var load in _loads)
+    {
+        <div class="heat-row">
+            <span>@NameOf(load.UserId)</span>
+            <div class="heat-track">
+                <div class="heat-bar heat-@Workload.Heat(load.OpenHours)" style="width:@(Percent(load))%"
+                     role="img" aria-label="@load.OpenHours open hours across @load.OpenItems tasks"></div>
+            </div>
+            <span>@load.OpenHours h</span>
+        </div>
+    }
+
+    @if (_loads.Count == 0)
+    {
+        <p class="empty">No open work. Nice.</p>
+    }
+</section>
+
+@code {
+    [CascadingParameter] public ThemeState? Theme { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<WorkItem> Items { get; set; } = [];
+    [Parameter] public IReadOnlyList<MemberInfo> Members { get; set; } = [];
+
+    private IReadOnlyList<MemberLoad> _loads = [];
+    private int _max = 1;
+
+    // Computed once per parameter change, not once per render row.
+    protected override void OnParametersSet()
+    {
+        _loads = Workload.Compute(Items);
+        _max = Math.Max(1, _loads.Count == 0 ? 1 : _loads.Max(l => l.OpenHours));
+    }
+
+    private string NameOf(Guid? id) =>
+        id is null ? "Unassigned" : Members.FirstOrDefault(m => m.UserId == id)?.DisplayName ?? "Unknown";
+
+    private int Percent(MemberLoad load) => load.OpenHours * 100 / _max;
+}

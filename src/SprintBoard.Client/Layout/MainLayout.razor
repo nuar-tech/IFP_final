@@ -1,0 +1,60 @@
+@* src/SprintBoard.Client/Layout/MainLayout.razor *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ThemeState Theme
+@inject AuthService Auth
+@inject TokenStore Tokens
+@inject NavigationManager Nav
+
+<CascadingValue Value="Theme">
+    <div class="app @(Theme.Dark ? "dark" : "light")">
+        <a class="skip-link" href="#main">Skip to content</a>
+        <header class="topbar">
+            <a class="brand" href="boards">SprintBoard</a>
+            <nav class="topbar-actions" aria-label="Main">
+                <button type="button" aria-pressed="@(Theme.Dark ? "true" : "false")" @onclick="Theme.Toggle">
+                    @(Theme.Dark ? "Light mode" : "Dark mode")
+                </button>
+                <button type="button" @onclick="SignOutAsync">Sign out</button>
+            </nav>
+        </header>
+
+        <main id="main">
+            @if (_ready)
+            {
+                <ErrorBoundary>
+                    <ChildContent>@Body</ChildContent>
+                    <ErrorContent>
+                        <p class="alert" role="alert">Something went wrong on this page. Please reload it.</p>
+                    </ErrorContent>
+                </ErrorBoundary>
+            }
+        </main>
+    </div>
+</CascadingValue>
+
+@code {
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Theme.Changed += OnThemeChanged;
+
+        var token = await Tokens.GetAsync();
+        var onLoginPage = Nav.ToBaseRelativePath(Nav.Uri).StartsWith("login", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(token) && !onLoginPage) Nav.NavigateTo("login");
+
+        _ready = true;
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task SignOutAsync()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("login");
+    }
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+}
+

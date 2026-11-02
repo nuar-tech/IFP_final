@@ -1,0 +1,26 @@
+@* src/SprintBoard.Client/Components/DataList.razor *@
+@typeparam TItem
+
+@if (Items.Count == 0)
+{
+    @EmptyTemplate
+}
+else
+{
+    <div class="list" role="list">
+        @foreach (var item in Items)
+        {
+            <div role="listitem" @key="Key(item)">@ItemTemplate(item)</div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment<TItem> ItemTemplate { get; set; } = default!;
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+    [Parameter] public Func<TItem, object>? KeySelector { get; set; }
+
+    private object Key(TItem item) => KeySelector?.Invoke(item) ?? item!;
+}
+

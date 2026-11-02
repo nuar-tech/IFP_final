@@ -1,0 +1,69 @@
+@* src/SprintBoard.Client/Pages/Boards.razor *@
+@page "/boards"
+@inject ApiClient Api
+
+<PageTitle>Boards | SprintBoard</PageTitle>
+<h1>Your boards</h1>
+
+@if (_error is not null)
+{
+    <p class="alert" role="alert">@_error</p>
+}
+
+@if (_boards is null)
+{
+    <p aria-live="polite">Loading boards...</p>
+}
+else
+{
+    <DataList TItem="Board" Items="_boards" KeySelector="b => b.Id">
+        <ItemTemplate Context="board">
+            <a class="board-link" href="boards/@board.Id">@board.Name</a>
+        </ItemTemplate>
+        <EmptyTemplate><p class="empty">No boards yet. Create your first one below.</p></EmptyTemplate>
+    </DataList>
+}
+
+<form class="inline-form" @onsubmit="CreateAsync">
+    <input @bind="_name" @bind:event="oninput" placeholder="New board name" aria-label="New board name" maxlength="60" />
+    <button type="submit" disabled="@string.IsNullOrWhiteSpace(_name)">Create board</button>
+</form>
+
+@code {
+    private IReadOnlyList<Board>? _boards;
+    private string _name = "";
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        switch (await Api.GetBoardsAsync())
+        {
+            case Result<IReadOnlyList<Board>>.Ok ok:
+                _boards = ok.Value;
+                break;
+            case Result<IReadOnlyList<Board>>.Fail fail:
+                _boards = [];
+                _error = fail.Error.Message;
+                break;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _error = null;
+
+        switch (await Api.CreateBoardAsync(_name))
+        {
+            case Result<Board>.Ok:
+                _name = "";
+                await LoadAsync();
+                break;
+            case Result<Board>.Fail fail:
+                _error = fail.Error.Message;
+                break;
+        }
+    }
+}
+

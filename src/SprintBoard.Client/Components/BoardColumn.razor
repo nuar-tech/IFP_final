@@ -1,0 +1,32 @@
+@* src/SprintBoard.Client/Components/BoardColumn.razor *@
+<section class="column @(_over ? "drag-over" : null)" aria-label="@Title"
+         @ondragover:preventDefault
+         @ondragenter="() => _over = true"
+         @ondragleave="() => _over = false"
+         @ondrop="HandleDropAsync">
+    <header class="column-head">
+        <h2>@Title</h2>
+        <span class="count" aria-label="@Items.Count tasks">@Items.Count</span>
+    </header>
+
+    <DataList TItem="WorkItem" Items="Items" ItemTemplate="ItemTemplate" KeySelector="i => i.Id">
+        <EmptyTemplate><p class="empty">Nothing here yet.</p></EmptyTemplate>
+    </DataList>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public WorkItemStatus Status { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<WorkItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment<WorkItem> ItemTemplate { get; set; } = default!;
+    [Parameter] public EventCallback<WorkItemStatus> OnDrop { get; set; }
+
+    private bool _over;
+
+    private async Task HandleDropAsync()
+    {
+        _over = false;
+        await OnDrop.InvokeAsync(Status);
+    }
+}
+

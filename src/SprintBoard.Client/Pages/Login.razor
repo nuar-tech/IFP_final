@@ -1,0 +1,62 @@
+@* src/SprintBoard.Client/Pages/Login.razor *@
+@page "/login"
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>@(_register ? "Create account" : "Sign in") | SprintBoard</PageTitle>
+
+<section class="auth-card">
+    <h1>@(_register ? "Create account" : "Sign in")</h1>
+
+    <form @onsubmit="SubmitAsync">
+        @if (_register)
+        {
+            <label>Name <input @bind="_name" required maxlength="40" autocomplete="name" /></label>
+        }
+        <label>Email <input type="email" @bind="_email" required autocomplete="email" /></label>
+        <label>Password
+            <input type="password" @bind="_password" required minlength="8"
+                   autocomplete="@(_register ? "new-password" : "current-password")" />
+        </label>
+
+        @if (_error is not null)
+        {
+            <p class="error" role="alert">@_error</p>
+        }
+
+        <button type="submit" disabled="@_busy">@(_register ? "Register" : "Sign in")</button>
+    </form>
+
+    <button type="button" class="link" @onclick="() => _register = !_register">
+        @(_register ? "I already have an account" : "Create an account")
+    </button>
+</section>
+
+@code {
+    private string _email = "", _password = "", _name = "";
+    private bool _register, _busy;
+    private string? _error;
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var result = _register
+            ? await Auth.RegisterAsync(_email, _password, _name)
+            : await Auth.LoginAsync(_email, _password);
+
+        _busy = false;
+
+        switch (result)
+        {
+            case Result<AuthResponse>.Ok:
+                Nav.NavigateTo("boards");
+                break;
+            case Result<AuthResponse>.Fail fail:
+                _error = fail.Error.Message;
+                break;
+        }
+    }
+}
+

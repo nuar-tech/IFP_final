@@ -1,0 +1,167 @@
+@* src/SprintBoard.Client/Pages/BoardPage.razor *@
+@page "/boards/{BoardId:guid}"
+@inherits StoreComponent
+@inject ApiClient Api
+@inject BoardHubClient Hub
+
+<PageTitle>Board | SprintBoard</PageTitle>
+<h1>Sprint board</h1>
+
+@if (State.Error is not null)
+{
+    <div class="alert" role="alert">
+        <span>@State.Error</span>
+        <button type="button" @onclick="() => Store.Dispatch(new ErrorDismissed())">Dismiss</button>
+    </div>
+}
+
+<form class="inline-form" @onsubmit="CreateAsync">
+    <input @bind="_title" @bind:event="oninput" placeholder="New task title" aria-label="New task title" maxlength="120" />
+    <select @bind="_priority" aria-label="Priority">
+        @foreach (var p in Enum.GetValues<Priority>())
+        {
+            <option value="@p">@p</option>
+        }
+    </select>
+    <input type="number" @bind="_hours" min="1" max="80" aria-label="Estimate in hours" />
+    <button type="submit" disabled="@string.IsNullOrWhiteSpace(_title)">Add task</button>
+</form>
+
+@if (State.Loading)
+{
+    <p aria-live="polite">Loading tasks...</p>
+}
+else
+{
+    <div class="board">
+        @foreach (var (title, status) in Columns)
+        {
+            <BoardColumn Title="@title" Status="status" Items="Selectors.ByStatus(State, status)" OnDrop="DropAsync">
+                <ItemTemplate Context="item">
+                    <TaskCard Item="item" Members="_members"
+                              OnDragStart="SetDragged"
+                              OnMove="target => MoveAsync(item, target)"
+                              OnAssign="assignee => AssignAsync(item, assignee)"
+                              OnDelete="DeleteAsync" />
+                </ItemTemplate>
+            </BoardColumn>
+        }
+    </div>
+
+    <WorkloadHeatmap Items="State.Items" Members="_members" />
+}
+
+@code {
+    [Parameter] public Guid BoardId { get; set; }
+
+    private static readonly (string Title, WorkItemStatus Status)[] Columns =
+    [
+        ("To do", WorkItemStatus.Todo),
+        ("In progress", WorkItemStatus.InProgress),
+        ("Done", WorkItemStatus.Done)
+    ];
+
+    private IReadOnlyList<MemberInfo> _members = [];
+    private string _title = "";
+    private Priority _priority = Priority.Medium;
+    private int _hours = 2;
+    private WorkItem? _dragged;
+    private Guid _loadedFor;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == BoardId) return;
+        _loadedFor = BoardId;
+
+        Store.Dispatch(new BoardLoading(BoardId));
+
+        var items = await Api.GetItemsAsync(BoardId);
+        Store.Dispatch(items.Match<IReadOnlyList<WorkItem>, StoreAction>(
+            list => new ItemsLoaded(list),
+            error => new Failed(error.Message)));
+
+        if (await Api.GetMembersAsync(BoardId) is Result<IReadOnlyList<MemberInfo>>.Ok members)
+            _members = members.Value;
+
+        try
+        {
+            await Hub.ConnectAsync(BoardId);
+        }
+        catch (Exception)
+        {
+            Store.Dispatch(new Failed("Live updates are unavailable. Changes from others appear after a refresh."));
+        }
+    }
+
+    private void SetDragged(WorkItem item) => _dragged = item;
+
+    private async Task DropAsync(WorkItemStatus status)
+    {
+        if (_dragged is not { } item) return;
+        _dragged = null;
+        await MoveAsync(item, status);
+    }
+
+    private async Task MoveAsync(WorkItem item, WorkItemStatus target)
+    {
+        if (item.Status == target) return;
+
+        switch (WorkItemRules.Move(item, target))   // run the same pure rule the server runs, before any network call
+        {
+            case Result<WorkItem>.Ok ok:
+                await OptimisticAsync(item, ok.Value, () => Api.MoveAsync(item.Id, target));
+                break;
+            case Result<WorkItem>.Fail fail:
+                Store.Dispatch(new Failed(fail.Error.Message));
+                break;
+        }
+    }
+
+    private Task AssignAsync(WorkItem item, Guid? assignee) =>
+        OptimisticAsync(item, item with { AssigneeId = assignee }, () => Api.AssignAsync(item.Id, assignee));
+
+    /// <summary>Show the change immediately; if the server says no, put the old version back.</summary>
+    private async Task OptimisticAsync(WorkItem original, WorkItem optimistic, Func<Task<Result<WorkItem>>> call)
+    {
+        Store.Dispatch(new ItemUpserted(optimistic));
+
+        if (await call() is Result<WorkItem>.Fail fail)
+        {
+            Store.Dispatch(new ItemUpserted(original));
+            Store.Dispatch(new Failed(fail.Error.Message));
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        var request = new CreateWorkItemRequest(_title, null, _priority, null, _hours);
+
+        switch (await Api.CreateItemAsync(BoardId, request))
+        {
+            case Result<WorkItem>.Ok ok:
+                Store.Dispatch(new ItemUpserted(ok.Value));
+                _title = "";
+                break;
+            case Result<WorkItem>.Fail fail:
+                Store.Dispatch(new Failed(fail.Error.Message));
+                break;
+        }
+    }
+
+    private async Task DeleteAsync(WorkItem item)
+    {
+        Store.Dispatch(new ItemRemoved(item.Id));
+
+        if (await Api.DeleteItemAsync(item.Id) is Result<WorkItem>.Fail fail)
+        {
+            Store.Dispatch(new ItemUpserted(item));
+            Store.Dispatch(new Failed(fail.Error.Message));
+        }
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _ = Hub.DisposeAsync();
+    }
+}

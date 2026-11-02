@@ -1,0 +1,8 @@
+@* src/SprintBoard.Client/Pages/Index.razor *@
+@page "/"
+@inject NavigationManager Nav
+
+@code {
+    protected override void OnInitialized() => Nav.NavigateTo("boards", replace: true);
+}
+

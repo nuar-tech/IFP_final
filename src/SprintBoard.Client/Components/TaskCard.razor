@@ -1,0 +1,59 @@
+@* src/SprintBoard.Client/Components/TaskCard.razor *@
+<article class="card @(IsAtRisk ? "at-risk" : null)"
+         draggable="true"
+         @ondragstart="() => OnDragStart.InvokeAsync(Item)"
+         aria-label="@Item.Title">
+    <header class="card-head">
+        <h3>@Item.Title</h3>
+        <span class="badge prio-@Item.Priority.ToString().ToLowerInvariant()">@Item.Priority</span>
+    </header>
+
+    <p class="meta">
+        @Item.EstimateHours h
+        @if (Item.DueDateUtc is { } due)
+        {
+            <span>&middot; due @due.ToLocalTime().ToString("d MMM")</span>
+        }
+        @if (IsAtRisk)
+        {
+            <strong class="risk">At risk</strong>
+        }
+    </p>
+
+    <select aria-label="Assignee" @onchange="e => OnAssign.InvokeAsync(ParseGuid(e.Value))">
+        <option value="" selected="@(Item.AssigneeId is null)">Unassigned</option>
+        @foreach (var member in Members)
+        {
+            <option value="@member.UserId" selected="@(member.UserId == Item.AssigneeId)">@member.DisplayName</option>
+        }
+    </select>
+
+    <footer class="card-actions">
+        @if (Item.Status > WorkItemStatus.Todo)
+        {
+            <button type="button" class="icon-btn" aria-label="Move to previous column"
+                    @onclick="() => OnMove.InvokeAsync(Item.Status - 1)">&larr;</button>
+        }
+        @if (Item.Status < WorkItemStatus.Done)
+        {
+            <button type="button" class="icon-btn" aria-label="Move to next column"
+                    @onclick="() => OnMove.InvokeAsync(Item.Status + 1)">&rarr;</button>
+        }
+        <button type="button" class="icon-btn danger" aria-label="Delete task"
+                @onclick="() => OnDelete.InvokeAsync(Item)">Delete</button>
+    </footer>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public WorkItem Item { get; set; } = default!;
+    [Parameter] public IReadOnlyList<MemberInfo> Members { get; set; } = [];
+    [Parameter] public EventCallback<WorkItem> OnDragStart { get; set; }
+    [Parameter] public EventCallback<WorkItemStatus> OnMove { get; set; }
+    [Parameter] public EventCallback<Guid?> OnAssign { get; set; }
+    [Parameter] public EventCallback<WorkItem> OnDelete { get; set; }
+
+    private bool IsAtRisk => WorkItemRules.IsAtRisk(Item, DateTime.UtcNow);   // same pure rule as the server
+
+    private static Guid? ParseGuid(object? value) => Guid.TryParse(value?.ToString(), out var id) ? id : null;
+}
+
