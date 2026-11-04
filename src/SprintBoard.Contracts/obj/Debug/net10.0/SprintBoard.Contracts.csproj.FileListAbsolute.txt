@@ -1,0 +1,16 @@
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\bin\Debug\net10.0\SprintBoard.Contracts.deps.json
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\bin\Debug\net10.0\SprintBoard.Contracts.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\bin\Debug\net10.0\SprintBoard.Contracts.pdb
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\bin\Debug\net10.0\SprintBoard.Domain.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\bin\Debug\net10.0\SprintBoard.Domain.pdb
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.csproj.AssemblyReference.cache
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.AssemblyInfoInputs.cache
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.AssemblyInfo.cs
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.csproj.CoreCompileInputs.cache
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.sourcelink.json
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBo.7E9347FC.Up2Date
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\refint\SprintBoard.Contracts.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\SprintBoard.Contracts.pdb
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Contracts\obj\Debug\net10.0\ref\SprintBoard.Contracts.dll

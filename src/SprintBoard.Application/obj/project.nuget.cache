@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "El0zjWzAfaE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\UserPC\\Desktop\\IFP_final\\src\\SprintBoard.Application\\SprintBoard.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\UserPC\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.14\\microsoft.extensions.dependencyinjection.abstractions.10.0.14.nupkg.sha512"
+  ],
+  "logs": []
+}

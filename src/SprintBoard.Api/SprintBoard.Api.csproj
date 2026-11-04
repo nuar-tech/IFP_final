@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SprintBoard.Application\SprintBoard.Application.csproj" />
+    <ProjectReference Include="..\SprintBoard.Infrastructure\SprintBoard.Infrastructure.csproj" />
+    <ProjectReference Include="..\SprintBoard.Contracts\SprintBoard.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

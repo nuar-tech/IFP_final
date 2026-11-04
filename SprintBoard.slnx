@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SprintBoard.Api/SprintBoard.Api.csproj" />
+    <Project Path="src/SprintBoard.Application/SprintBoard.Application.csproj" />
+    <Project Path="src/SprintBoard.Client/SprintBoard.Client.csproj" />
+    <Project Path="src/SprintBoard.Contracts/SprintBoard.Contracts.csproj" />
+    <Project Path="src/SprintBoard.Domain/SprintBoard.Domain.csproj" />
+    <Project Path="src/SprintBoard.Infrastructure/SprintBoard.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SprintBoard.Api.IntegrationTests/SprintBoard.Api.IntegrationTests.csproj" />
+    <Project Path="tests/SprintBoard.Client.Tests/SprintBoard.Client.Tests.csproj" />
+    <Project Path="tests/SprintBoard.Domain.Tests/SprintBoard.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

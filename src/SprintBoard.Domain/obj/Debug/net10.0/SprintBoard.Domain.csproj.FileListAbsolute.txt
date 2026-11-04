@@ -1,0 +1,12 @@
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\bin\Debug\net10.0\SprintBoard.Domain.deps.json
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\bin\Debug\net10.0\SprintBoard.Domain.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\bin\Debug\net10.0\SprintBoard.Domain.pdb
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.AssemblyInfoInputs.cache
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.AssemblyInfo.cs
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.csproj.CoreCompileInputs.cache
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.sourcelink.json
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\refint\SprintBoard.Domain.dll
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\SprintBoard.Domain.pdb
+C:\Users\UserPC\Desktop\IFP_final\src\SprintBoard.Domain\obj\Debug\net10.0\ref\SprintBoard.Domain.dll
