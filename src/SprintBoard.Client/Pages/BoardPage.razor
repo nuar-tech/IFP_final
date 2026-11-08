@@ -15,17 +15,52 @@
     </div>
 }
 
-<form class="inline-form" @onsubmit="CreateAsync">
-    <input @bind="_title" @bind:event="oninput" placeholder="New task title" aria-label="New task title" maxlength="120" />
-    <select @bind="_priority" aria-label="Priority">
-        @foreach (var p in Enum.GetValues<Priority>())
+<section class="members-panel" aria-labelledby="members-heading">
+    <h2 id="members-heading">Board members</h2>
+    @if (_members.Count > 0)
+    {
+        <ul class="member-list">
+            @foreach (var member in _members)
+            {
+                <li>@member.DisplayName <span class="meta">(@member.Role)</span></li>
+            }
+        </ul>
+    }
+
+    @if (_canManageMembers)
+    {
+        <form class="inline-form" @onsubmit="AddMemberAsync">
+            <input type="email" @bind="_memberEmail" required placeholder="Member email"
+                   aria-label="Member email" autocomplete="email" />
+            <select @bind="_memberRole" aria-label="New member role">
+                <option value="@Role.Member">Member</option>
+                <option value="@Role.Viewer">Viewer</option>
+            </select>
+            <button type="submit" disabled="@(_addingMember || string.IsNullOrWhiteSpace(_memberEmail))">
+                @(_addingMember ? "Adding..." : "Add member")
+            </button>
+        </form>
+        @if (_memberError is not null)
         {
-            <option value="@p">@p</option>
+            <p class="error" role="alert">@_memberError</p>
         }
-    </select>
-    <input type="number" @bind="_hours" min="1" max="80" aria-label="Estimate in hours" />
-    <button type="submit" disabled="@string.IsNullOrWhiteSpace(_title)">Add task</button>
-</form>
+    }
+</section>
+
+@if (_canManageTasks)
+{
+    <form class="inline-form" @onsubmit="CreateAsync">
+        <input @bind="_title" @bind:event="oninput" placeholder="New task title" aria-label="New task title" maxlength="120" />
+        <select @bind="_priority" aria-label="Priority">
+            @foreach (var p in Enum.GetValues<Priority>())
+            {
+                <option value="@p">@p</option>
+            }
+        </select>
+        <input type="number" @bind="_hours" min="1" max="80" aria-label="Estimate in hours" />
+        <button type="submit" disabled="@string.IsNullOrWhiteSpace(_title)">Add task</button>
+    </form>
+}
 
 @if (State.Loading)
 {
@@ -39,9 +74,12 @@ else
             <BoardColumn Title="@title" Status="status" Items="Selectors.ByStatus(State, status)" OnDrop="DropAsync">
                 <ItemTemplate Context="item">
                     <TaskCard Item="item" Members="_members"
+                              CanManageTasks="_canManageTasks"
+                              CanMove="CanMove(item)"
                               OnDragStart="SetDragged"
                               OnMove="target => MoveAsync(item, target)"
                               OnAssign="assignee => AssignAsync(item, assignee)"
+                              OnEdit="request => EditAsync(item, request)"
                               OnDelete="DeleteAsync" />
                 </ItemTemplate>
             </BoardColumn>
@@ -62,6 +100,13 @@ else
     ];
 
     private IReadOnlyList<MemberInfo> _members = [];
+    private BoardAccess? _access;
+    private bool _canManageTasks => _access?.Role == Role.Owner;
+    private bool _canManageMembers => _canManageTasks;
+    private string _memberEmail = "";
+    private Role _memberRole = Role.Member;
+    private bool _addingMember;
+    private string? _memberError;
     private string _title = "";
     private Priority _priority = Priority.Medium;
     private int _hours = 2;
@@ -72,6 +117,9 @@ else
     {
         if (_loadedFor == BoardId) return;
         _loadedFor = BoardId;
+        _members = [];
+        _access = null;
+        _memberError = null;
 
         Store.Dispatch(new BoardLoading(BoardId));
 
@@ -80,8 +128,29 @@ else
             list => new ItemsLoaded(list),
             error => new Failed(error.Message)));
 
-        if (await Api.GetMembersAsync(BoardId) is Result<IReadOnlyList<MemberInfo>>.Ok members)
-            _members = members.Value;
+        var membersTask = Api.GetMembersAsync(BoardId);
+        var permissionsTask = Api.GetBoardAccessAsync(BoardId);
+        await Task.WhenAll(membersTask, permissionsTask);
+
+        switch (await membersTask)
+        {
+            case Result<IReadOnlyList<MemberInfo>>.Ok members:
+                _members = members.Value;
+                break;
+            case Result<IReadOnlyList<MemberInfo>>.Fail fail:
+                Store.Dispatch(new Failed(fail.Error.Message));
+                break;
+        }
+
+        switch (await permissionsTask)
+        {
+            case Result<BoardAccess>.Ok access:
+                _access = access.Value;
+                break;
+            case Result<BoardAccess>.Fail fail:
+                Store.Dispatch(new Failed(fail.Error.Message));
+                break;
+        }
 
         try
         {
@@ -99,11 +168,13 @@ else
     {
         if (_dragged is not { } item) return;
         _dragged = null;
+        if (!CanMove(item)) return;
         await MoveAsync(item, status);
     }
 
     private async Task MoveAsync(WorkItem item, WorkItemStatus target)
     {
+        if (!CanMove(item)) return;
         if (item.Status == target) return;
 
         switch (WorkItemRules.Move(item, target))   // run the same pure rule the server runs, before any network call
@@ -119,6 +190,50 @@ else
 
     private Task AssignAsync(WorkItem item, Guid? assignee) =>
         OptimisticAsync(item, item with { AssigneeId = assignee }, () => Api.AssignAsync(item.Id, assignee));
+
+    private Task EditAsync(WorkItem item, EditWorkItemRequest request) =>
+        OptimisticAsync(item, item with
+        {
+            Title = request.Title.Trim(),
+            Priority = request.Priority,
+            EstimateHours = request.EstimateHours
+        }, () => Api.EditItemAsync(item.Id, request));
+
+    private bool CanMove(WorkItem item) =>
+        _access is { } access &&
+        (access.Role == Role.Owner || access.Role == Role.Member && item.AssigneeId == access.UserId);
+
+    private async Task AddMemberAsync()
+    {
+        _addingMember = true;
+        _memberError = null;
+
+        try
+        {
+            switch (await Api.AddMemberAsync(BoardId, _memberEmail, _memberRole))
+            {
+                case Result<BoardMember>.Ok:
+                    _memberEmail = "";
+                    switch (await Api.GetMembersAsync(BoardId))
+                    {
+                        case Result<IReadOnlyList<MemberInfo>>.Ok members:
+                            _members = members.Value;
+                            break;
+                        case Result<IReadOnlyList<MemberInfo>>.Fail fail:
+                            _memberError = $"Member was added, but the member list could not be refreshed: {fail.Error.Message}";
+                            break;
+                    }
+                    break;
+                case Result<BoardMember>.Fail fail:
+                    _memberError = fail.Error.Message;
+                    break;
+            }
+        }
+        finally
+        {
+            _addingMember = false;
+        }
+    }
 
     /// <summary>Show the change immediately; if the server says no, put the old version back.</summary>
     private async Task OptimisticAsync(WorkItem original, WorkItem optimistic, Func<Task<Result<WorkItem>>> call)

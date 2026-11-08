@@ -12,6 +12,7 @@ public sealed record AddMemberRequest(string Email, Role Role);
 
 public sealed record CreateWorkItemRequest(
     string Title, string? Description, Priority Priority, DateTime? DueDateUtc, int EstimateHours);
+public sealed record EditWorkItemRequest(string Title, Priority Priority, int EstimateHours);
 public sealed record MoveWorkItemRequest(WorkItemStatus Status);
 public sealed record AssignRequest(Guid? AssigneeId);
 

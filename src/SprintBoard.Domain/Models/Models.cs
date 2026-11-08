@@ -11,6 +11,8 @@ public sealed record BoardMember(Guid BoardId, Guid UserId, Role Role);
 
 public sealed record MemberInfo(Guid UserId, string DisplayName, Role Role);
 
+public sealed record BoardAccess(Guid UserId, Role Role);
+
 public sealed record WorkItem(
     Guid Id,
     Guid BoardId,

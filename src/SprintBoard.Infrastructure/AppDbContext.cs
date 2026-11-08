@@ -11,6 +11,12 @@ public sealed class AppUser : IdentityUser<Guid>
     public string DisplayName { get; set; } = "";
 }
 
+public sealed class CaseSensitiveLookupNormalizer : ILookupNormalizer
+{
+    public string? NormalizeName(string? name) => name;
+    public string? NormalizeEmail(string? email) => email;
+}
+
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>(options)
 {

@@ -25,6 +25,9 @@ public static class BoardEndpoints
         api.MapGet("/boards/{boardId:guid}/members", async (Guid boardId, ClaimsPrincipal user, BoardService svc, CancellationToken ct) =>
             (await svc.MembersAsync(boardId, user.GetUserId(), ct)).ToHttp());
 
+        api.MapGet("/boards/{boardId:guid}/permissions", async (Guid boardId, ClaimsPrincipal user, BoardService svc, CancellationToken ct) =>
+            (await svc.AccessAsync(boardId, user.GetUserId(), ct)).ToHttp());
+
         api.MapPost("/boards/{boardId:guid}/members", async (Guid boardId, AddMemberRequest req, ClaimsPrincipal user, BoardService svc, CancellationToken ct) =>
             (await svc.AddMemberAsync(boardId, req.Email, req.Role, user.GetUserId(), ct)).ToHttp());
 
@@ -42,6 +45,12 @@ public static class BoardEndpoints
         api.MapPut("/items/{itemId:guid}/move", async (Guid itemId, MoveWorkItemRequest req, ClaimsPrincipal user,
             WorkItemService svc, IHubContext<BoardHub> hub, CancellationToken ct) =>
             await BroadcastAsync(await svc.MoveAsync(itemId, req.Status, user.GetUserId(), ct), hub, ct));
+
+        api.MapPut("/items/{itemId:guid}/edit", async (Guid itemId, EditWorkItemRequest req, ClaimsPrincipal user,
+            WorkItemService svc, IHubContext<BoardHub> hub, CancellationToken ct) =>
+            await BroadcastAsync(
+                await svc.EditAsync(itemId, req.Title, req.Priority, req.EstimateHours, user.GetUserId(), ct),
+                hub, ct));
 
         api.MapPut("/items/{itemId:guid}/assign", async (Guid itemId, AssignRequest req, ClaimsPrincipal user,
             WorkItemService svc, IHubContext<BoardHub> hub, CancellationToken ct) =>

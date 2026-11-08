@@ -11,5 +11,6 @@
     <Project Path="tests/SprintBoard.Api.IntegrationTests/SprintBoard.Api.IntegrationTests.csproj" />
     <Project Path="tests/SprintBoard.Client.Tests/SprintBoard.Client.Tests.csproj" />
     <Project Path="tests/SprintBoard.Domain.Tests/SprintBoard.Domain.Tests.csproj" />
+    <Project Path="tests/SprintBoard.E2E/SprintBoard.E2E.csproj" />
   </Folder>
 </Solution>

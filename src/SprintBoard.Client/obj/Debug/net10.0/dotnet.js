@@ -5,7 +5,7 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
   "mainAssemblyName": "SprintBoard.Client",
   "applicationEnvironment": "Development",
   "resources": {
-    "hash": "sha256-XcdlMo2cR9Gr9xbgyVtUZ7/ZNlxxTuiWgvGvPIX/isI=",
+    "hash": "sha256-RJjgoALSqXDqcgnUlHetomRnSIE5P8WhE9fQrRFGt34=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.vzj2a6aakt.js"
@@ -1290,14 +1290,14 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "SprintBoard.Contracts.wasm",
-        "name": "SprintBoard.Contracts.aqj5npwi7e.wasm",
-        "hash": "sha256-Iu7sNoC3zkxepXGdF41zcDOrAt4YfRgBCUPzLxbsnGE=",
+        "name": "SprintBoard.Contracts.zp1r0tfhyz.wasm",
+        "hash": "sha256-ifoV0DeU7v2i78RZFsPbR/yrgoGT/BF+JorC1UeTfDs=",
         "cache": "force-cache"
       },
       {
         "virtualPath": "SprintBoard.Domain.wasm",
-        "name": "SprintBoard.Domain.p38dxmjlqh.wasm",
-        "hash": "sha256-u0zXPQVnxh3RIBWx0Sq/cQxYzU0548kM+LlrFBpePWg=",
+        "name": "SprintBoard.Domain.etonfojpo7.wasm",
+        "hash": "sha256-YhzHyNK9RjsXH6LUr+3Vee2ND5f5xzFF4+eXOko4nrE=",
         "cache": "force-cache"
       },
       {
@@ -1308,28 +1308,28 @@ var e=!1;const t=async()=>WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,
       },
       {
         "virtualPath": "SprintBoard.Client.wasm",
-        "name": "SprintBoard.Client.fgijp9rce9.wasm",
-        "hash": "sha256-0e7N/dqhvqHu4ZMRF0Ae53knH6UnwBwa/Uru0m7zHQI=",
+        "name": "SprintBoard.Client.h55tao2g0z.wasm",
+        "hash": "sha256-q3Z9qQ7uwl+oX7zpVCe6rno8eJB6moYkKjTmxYQTlOw=",
         "cache": "force-cache"
       }
     ],
     "pdb": [
       {
         "virtualPath": "SprintBoard.Contracts.pdb",
-        "name": "SprintBoard.Contracts.7bms22hv4w.pdb",
-        "hash": "sha256-87k6nGtZJJoplOXQpLF+QTsb1D9SnRVs2xBwUu1cmuo=",
+        "name": "SprintBoard.Contracts.qjhmogxhbv.pdb",
+        "hash": "sha256-VqqbpSNHRjYn/7brF1/DQLv+0bvM0TjXZDn1eYPyndM=",
         "cache": "force-cache"
       },
       {
         "virtualPath": "SprintBoard.Domain.pdb",
-        "name": "SprintBoard.Domain.6y9u8ff8m9.pdb",
-        "hash": "sha256-3iHwpn2f9XMzEos+PCFvZS3Dl5Nynp6vSJZOqkUzWiU=",
+        "name": "SprintBoard.Domain.5qxgycf0y7.pdb",
+        "hash": "sha256-Q+88SE17dPPWLMAWjUmy5Srg75LpjYZp+8x0o9r6VFs=",
         "cache": "force-cache"
       },
       {
         "virtualPath": "SprintBoard.Client.pdb",
-        "name": "SprintBoard.Client.kzelqbtem8.pdb",
-        "hash": "sha256-IPWwcJttvKhrKVEU1mPWswVyEwBX0pFSmkU2f5I3yPE=",
+        "name": "SprintBoard.Client.emyc4y0jp5.pdb",
+        "hash": "sha256-RkbFgB4QSxA2eK88VvuTGHePN8pey7ZkGTkd7xHlUHY=",
         "cache": "force-cache"
       }
     ],

@@ -73,9 +73,9 @@ internal sealed class UserLookup(AppDbContext db) : IUserLookup
 {
     public async Task<Guid?> FindIdByEmailAsync(string email, CancellationToken ct)
     {
-        var normalized = email.Trim().ToUpperInvariant();
+        var exactEmail = email.Trim();
         return await db.Users
-            .Where(u => u.NormalizedEmail == normalized)
+            .Where(u => u.Email == exactEmail)
             .Select(u => (Guid?)u.Id)
             .FirstOrDefaultAsync(ct);
     }

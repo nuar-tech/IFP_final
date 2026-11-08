@@ -1,59 +1,130 @@
 @* src/SprintBoard.Client/Components/TaskCard.razor *@
 <article class="card @(IsAtRisk ? "at-risk" : null)"
-         draggable="true"
-         @ondragstart="() => OnDragStart.InvokeAsync(Item)"
+         draggable="@(CanMove ? "true" : "false")"
+         @ondragstart="StartDrag"
          aria-label="@Item.Title">
-    <header class="card-head">
-        <h3>@Item.Title</h3>
-        <span class="badge prio-@Item.Priority.ToString().ToLowerInvariant()">@Item.Priority</span>
-    </header>
+    @if (_editing)
+    {
+        <form class="task-edit-form" @onsubmit="SaveAsync">
+            <label>
+                Task title
+                <input @bind="_title" required maxlength="120" />
+            </label>
+            <label>
+                Priority
+                <select @bind="_priority">
+                    @foreach (var priority in Enum.GetValues<Priority>())
+                    {
+                        <option value="@priority">@priority</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Estimate in hours
+                <input type="number" @bind="_estimateHours" min="1" max="80" required />
+            </label>
+            <div class="card-actions">
+                <button type="submit">Save changes</button>
+                <button type="button" @onclick="CancelEdit">Cancel</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <header class="card-head">
+            <h3>@Item.Title</h3>
+            <span class="badge prio-@Item.Priority.ToString().ToLowerInvariant()">@Item.Priority</span>
+        </header>
 
-    <p class="meta">
-        @Item.EstimateHours h
-        @if (Item.DueDateUtc is { } due)
-        {
-            <span>&middot; due @due.ToLocalTime().ToString("d MMM")</span>
-        }
-        @if (IsAtRisk)
-        {
-            <strong class="risk">At risk</strong>
-        }
-    </p>
+        <p class="meta">
+            @Item.EstimateHours h
+            @if (Item.DueDateUtc is { } due)
+            {
+                <span>&middot; due @due.ToLocalTime().ToString("d MMM")</span>
+            }
+            @if (IsAtRisk)
+            {
+                <strong class="risk">At risk</strong>
+            }
+        </p>
 
-    <select aria-label="Assignee" @onchange="e => OnAssign.InvokeAsync(ParseGuid(e.Value))">
-        <option value="" selected="@(Item.AssigneeId is null)">Unassigned</option>
-        @foreach (var member in Members)
+        @if (CanManageTasks)
         {
-            <option value="@member.UserId" selected="@(member.UserId == Item.AssigneeId)">@member.DisplayName</option>
+            <select aria-label="Assignee" @onchange="e => OnAssign.InvokeAsync(ParseGuid(e.Value))">
+                <option value="" selected="@(Item.AssigneeId is null)">Unassigned</option>
+                @foreach (var member in Members.Where(m => m.Role is Role.Member or Role.Owner))
+                {
+                    <option value="@member.UserId" selected="@(member.UserId == Item.AssigneeId)">@member.DisplayName</option>
+                }
+            </select>
         }
-    </select>
+        else
+        {
+            <p class="meta">Assigned to: @AssigneeName</p>
+        }
 
-    <footer class="card-actions">
-        @if (Item.Status > WorkItemStatus.Todo)
-        {
-            <button type="button" class="icon-btn" aria-label="Move to previous column"
-                    @onclick="() => OnMove.InvokeAsync(Item.Status - 1)">&larr;</button>
-        }
-        @if (Item.Status < WorkItemStatus.Done)
-        {
-            <button type="button" class="icon-btn" aria-label="Move to next column"
-                    @onclick="() => OnMove.InvokeAsync(Item.Status + 1)">&rarr;</button>
-        }
-        <button type="button" class="icon-btn danger" aria-label="Delete task"
-                @onclick="() => OnDelete.InvokeAsync(Item)">Delete</button>
-    </footer>
+        <footer class="card-actions">
+            @if (CanMove && Item.Status > WorkItemStatus.Todo)
+            {
+                <button type="button" class="icon-btn" aria-label="Move to previous column"
+                        @onclick="() => OnMove.InvokeAsync(Item.Status - 1)">&larr;</button>
+            }
+            @if (CanMove && Item.Status < WorkItemStatus.Done)
+            {
+                <button type="button" class="icon-btn" aria-label="Move to next column"
+                        @onclick="() => OnMove.InvokeAsync(Item.Status + 1)">&rarr;</button>
+            }
+            @if (CanManageTasks)
+            {
+                <button type="button" class="icon-btn" aria-label="Edit task" @onclick="BeginEdit">Edit</button>
+                <button type="button" class="icon-btn danger" aria-label="Delete task"
+                        @onclick="() => OnDelete.InvokeAsync(Item)">Delete</button>
+            }
+        </footer>
+    }
 </article>
 
 @code {
     [Parameter, EditorRequired] public WorkItem Item { get; set; } = default!;
     [Parameter] public IReadOnlyList<MemberInfo> Members { get; set; } = [];
+    [Parameter] public bool CanManageTasks { get; set; }
+    [Parameter] public bool CanMove { get; set; }
     [Parameter] public EventCallback<WorkItem> OnDragStart { get; set; }
     [Parameter] public EventCallback<WorkItemStatus> OnMove { get; set; }
     [Parameter] public EventCallback<Guid?> OnAssign { get; set; }
+    [Parameter] public EventCallback<EditWorkItemRequest> OnEdit { get; set; }
     [Parameter] public EventCallback<WorkItem> OnDelete { get; set; }
 
-    private bool IsAtRisk => WorkItemRules.IsAtRisk(Item, DateTime.UtcNow);   // same pure rule as the server
+    private bool _editing;
+    private string _title = "";
+    private Priority _priority;
+    private int _estimateHours;
+
+    private bool IsAtRisk => WorkItemRules.IsAtRisk(Item, DateTime.UtcNow);
+    private string AssigneeName =>
+        Item.AssigneeId is { } id
+            ? Members.FirstOrDefault(m => m.UserId == id)?.DisplayName ?? "Unknown"
+            : "Unassigned";
+
+    protected override void OnParametersSet()
+    {
+        if (_editing) return;
+        _title = Item.Title;
+        _priority = Item.Priority;
+        _estimateHours = Item.EstimateHours;
+    }
+
+    private Task StartDrag() => CanMove ? OnDragStart.InvokeAsync(Item) : Task.CompletedTask;
+
+    private void BeginEdit() => _editing = true;
+
+    private void CancelEdit() => _editing = false;
+
+    private async Task SaveAsync()
+    {
+        await OnEdit.InvokeAsync(new EditWorkItemRequest(_title, _priority, _estimateHours));
+        _editing = false;
+    }
 
     private static Guid? ParseGuid(object? value) => Guid.TryParse(value?.ToString(), out var id) ? id : null;
 }
-

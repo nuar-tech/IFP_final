@@ -19,6 +19,8 @@ public static class WorkItemRules
             return Result.Fail<WorkItem>(Errors.Validation("Title is required."));
         if (trimmed.Length > MaxTitleLength)
             return Result.Fail<WorkItem>(Errors.Validation($"Title must be {MaxTitleLength} characters or fewer."));
+        if (!Enum.IsDefined(typeof(Priority), priority))
+            return Result.Fail<WorkItem>(Errors.Validation("Task priority is invalid."));
         if (estimateHours is < 1 or > 80)
             return Result.Fail<WorkItem>(Errors.Validation("Estimate must be between 1 and 80 hours."));
         if (dueDateUtc is { } due && due < nowUtc.Date)
@@ -31,13 +33,31 @@ public static class WorkItemRules
 
     /// <summary>Done tasks must be reopened via InProgress, never straight back to Todo.</summary>
     public static Result<WorkItem> Move(WorkItem item, WorkItemStatus target) =>
-        (item.Status, target) switch
+        !Enum.IsDefined(typeof(WorkItemStatus), target)
+            ? Result.Fail<WorkItem>(Errors.Validation("Task status is invalid."))
+            : (item.Status, target) switch
         {
             var (a, b) when a == b => Result.Ok(item),
             (WorkItemStatus.Done, WorkItemStatus.Todo) =>
                 Result.Fail<WorkItem>(Errors.InvalidMove("Reopen a finished task by moving it to In progress first.")),
             _ => Result.Ok(item with { Status = target })
         };
+
+    public static Result<WorkItem> Edit(WorkItem item, string? title, Priority priority, int estimateHours)
+    {
+        var trimmed = title?.Trim() ?? "";
+
+        if (trimmed.Length == 0)
+            return Result.Fail<WorkItem>(Errors.Validation("Title is required."));
+        if (trimmed.Length > MaxTitleLength)
+            return Result.Fail<WorkItem>(Errors.Validation($"Title must be {MaxTitleLength} characters or fewer."));
+        if (!Enum.IsDefined(typeof(Priority), priority))
+            return Result.Fail<WorkItem>(Errors.Validation("Task priority is invalid."));
+        if (estimateHours is < 1 or > 80)
+            return Result.Fail<WorkItem>(Errors.Validation("Estimate must be between 1 and 80 hours."));
+
+        return Result.Ok(item with { Title = trimmed, Priority = priority, EstimateHours = estimateHours });
+    }
 
     /// <summary>An open task is at risk when its deadline is near compared with the work still to do.</summary>
     public static bool IsAtRisk(WorkItem item, DateTime nowUtc) =>

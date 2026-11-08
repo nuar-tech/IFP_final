@@ -40,6 +40,36 @@ public class WorkItemRulesTests
     }
 
     [Fact]
+    public void Create_rejects_an_invalid_priority()
+    {
+        var result = WorkItemRules.Create(Guid.NewGuid(), Guid.NewGuid(), "Task", null, (Priority)99, null, 1, 0, Now);
+        Assert.IsType<Result<WorkItem>.Fail>(result);
+    }
+
+    [Fact]
+    public void Edit_updates_title_priority_and_estimate_without_changing_assignment_or_status()
+    {
+        var assignee = Guid.NewGuid();
+        var original = Sample(WorkItemStatus.InProgress, assignee: assignee);
+
+        var edited = Assert.IsType<Result<WorkItem>.Ok>(
+            WorkItemRules.Edit(original, "  Updated task  ", Priority.High, 8));
+
+        Assert.Equal("Updated task", edited.Value.Title);
+        Assert.Equal(Priority.High, edited.Value.Priority);
+        Assert.Equal(8, edited.Value.EstimateHours);
+        Assert.Equal(assignee, edited.Value.AssigneeId);
+        Assert.Equal(WorkItemStatus.InProgress, edited.Value.Status);
+    }
+
+    [Fact]
+    public void Edit_rejects_invalid_estimates()
+    {
+        var result = WorkItemRules.Edit(Sample(), "Updated task", Priority.High, 0);
+        Assert.IsType<Result<WorkItem>.Fail>(result);
+    }
+
+    [Fact]
     public void Move_from_done_straight_to_todo_is_rejected()
     {
         var result = WorkItemRules.Move(Sample(WorkItemStatus.Done), WorkItemStatus.Todo);

@@ -17,8 +17,8 @@ public static class AuthEndpoints
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
-                UserName = req.Email,
-                Email = req.Email,
+                UserName = req.Email.Trim(),
+                Email = req.Email.Trim(),
                 DisplayName = (req.DisplayName ?? "").Trim()
             };
 
@@ -30,7 +30,7 @@ public static class AuthEndpoints
 
         auth.MapPost("/login", async (LoginRequest req, UserManager<AppUser> users, TokenService tokens) =>
         {
-            var user = await users.FindByEmailAsync(req.Email);
+            var user = await users.FindByEmailAsync(req.Email.Trim());
             if (user is null || !await users.CheckPasswordAsync(user, req.Password))
                 return Results.Json(new Error("unauthorized", "Wrong email or password."),
                     statusCode: StatusCodes.Status401Unauthorized);

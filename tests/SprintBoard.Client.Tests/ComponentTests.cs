@@ -27,6 +27,7 @@ public class TaskCardTests : BunitContext
 
         var cut = Render<TaskCard>(p => p
             .Add(c => c.Item, Item())
+            .Add(c => c.CanMove, true)
             .Add(c => c.OnMove, EventCallback.Factory.Create<WorkItemStatus>(this, s => { moved = s; })));
 
         cut.Find("button[aria-label='Move to next column']").Click();
@@ -48,6 +49,32 @@ public class TaskCardTests : BunitContext
         var cut = Render<TaskCard>(p => p.Add(c => c.Item, Item(due: DateTime.UtcNow.AddHours(-2))));
 
         Assert.Contains("at-risk", cut.Find("article").ClassName);
+    }
+
+    [Fact]
+    public void Only_task_managers_see_edit_and_delete_actions()
+    {
+        var memberCard = Render<TaskCard>(p => p.Add(c => c.Item, Item()));
+
+        Assert.Empty(memberCard.FindAll("button[aria-label='Edit task']"));
+        Assert.Empty(memberCard.FindAll("button[aria-label='Delete task']"));
+
+        var ownerCard = Render<TaskCard>(p => p
+            .Add(c => c.Item, Item())
+            .Add(c => c.CanManageTasks, true));
+
+        ownerCard.Find("button[aria-label='Edit task']").Click();
+        Assert.Single(ownerCard.FindAll("input[maxlength='120']"));
+        Assert.Single(ownerCard.FindAll("input[type='number']"));
+    }
+
+    [Fact]
+    public void An_unassigned_member_cannot_move_a_task()
+    {
+        var cut = Render<TaskCard>(p => p.Add(c => c.Item, Item()));
+
+        Assert.Empty(cut.FindAll("button[aria-label='Move to next column']"));
+        Assert.Empty(cut.FindAll("button[aria-label='Move to previous column']"));
     }
 }
 

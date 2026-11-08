@@ -26,6 +26,12 @@ public sealed class ApiClient(HttpClient http)
     public Task<Result<IReadOnlyList<MemberInfo>>> GetMembersAsync(Guid boardId) =>
         GetAsync<IReadOnlyList<MemberInfo>>($"api/boards/{boardId}/members");
 
+    public Task<Result<BoardAccess>> GetBoardAccessAsync(Guid boardId) =>
+        GetAsync<BoardAccess>($"api/boards/{boardId}/permissions");
+
+    public Task<Result<BoardMember>> AddMemberAsync(Guid boardId, string email, Role role) =>
+        PostAsync<BoardMember>($"api/boards/{boardId}/members", new AddMemberRequest(email, role));
+
     public Task<Result<IReadOnlyList<WorkItem>>> GetItemsAsync(Guid boardId) =>
         GetAsync<IReadOnlyList<WorkItem>>($"api/boards/{boardId}/items");
 
@@ -34,6 +40,9 @@ public sealed class ApiClient(HttpClient http)
 
     public Task<Result<WorkItem>> MoveAsync(Guid itemId, WorkItemStatus status) =>
         PutAsync<WorkItem>($"api/items/{itemId}/move", new MoveWorkItemRequest(status));
+
+    public Task<Result<WorkItem>> EditItemAsync(Guid itemId, EditWorkItemRequest request) =>
+        PutAsync<WorkItem>($"api/items/{itemId}/edit", request);
 
     public Task<Result<WorkItem>> AssignAsync(Guid itemId, Guid? assigneeId) =>
         PutAsync<WorkItem>($"api/items/{itemId}/assign", new AssignRequest(assigneeId));

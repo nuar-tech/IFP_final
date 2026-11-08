@@ -28,6 +28,13 @@ public sealed class BoardService(IBoardRepository boards, IUserLookup users, ICl
         return Result.Ok(await boards.GetMembersAsync(boardId, ct));
     }
 
+    public async Task<Result<BoardAccess>> AccessAsync(Guid boardId, Guid userId, CancellationToken ct)
+    {
+        var role = await boards.GetRoleAsync(boardId, userId, ct);
+        if (role is null) return Result.Fail<BoardAccess>(Errors.Forbidden);
+        return Result.Ok(new BoardAccess(userId, role.Value));
+    }
+
     public async Task<Result<BoardMember>> AddMemberAsync(
         Guid boardId, string email, Role role, Guid userId, CancellationToken ct)
     {

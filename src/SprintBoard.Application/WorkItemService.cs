@@ -17,7 +17,7 @@ public sealed class WorkItemService(IWorkItemRepository items, IBoardRepository 
     public async Task<Result<WorkItem>> CreateAsync(CreateWorkItemCommand cmd, Guid userId, CancellationToken ct)
     {
         var role = await boards.GetRoleAsync(cmd.BoardId, userId, ct);
-        if (!Permissions.CanEdit(role)) return Result.Fail<WorkItem>(Errors.Forbidden);
+        if (!Permissions.CanManageTasks(role)) return Result.Fail<WorkItem>(Errors.Forbidden);
 
         var existing = await items.GetByBoardAsync(cmd.BoardId, ct);
         var position = existing.Count(i => i.Status == WorkItemStatus.Todo);
@@ -32,38 +32,53 @@ public sealed class WorkItemService(IWorkItemRepository items, IBoardRepository 
 
     public async Task<Result<WorkItem>> MoveAsync(Guid itemId, WorkItemStatus target, Guid userId, CancellationToken ct)
     {
-        var loaded = await LoadEditableAsync(itemId, userId, ct);
+        var item = await items.GetAsync(itemId, ct);
+        if (item is null) return Result.Fail<WorkItem>(Errors.NotFound);
+
+        var role = await boards.GetRoleAsync(item.BoardId, userId, ct);
+        if (!Permissions.CanMoveTask(role, userId, item))
+            return Result.Fail<WorkItem>(Errors.Forbidden);
+
+        var loaded = Result.Ok(item);
         return await PersistAsync(loaded.Bind(item => WorkItemRules.Move(item, target)), ct);
     }
 
     public async Task<Result<WorkItem>> AssignAsync(Guid itemId, Guid? assigneeId, Guid userId, CancellationToken ct)
     {
-        var loaded = await LoadEditableAsync(itemId, userId, ct);
+        var loaded = await LoadOwnerEditableAsync(itemId, userId, ct);
 
         if (loaded is Result<WorkItem>.Ok { Value: var current } &&
             assigneeId is { } assignee &&
-            await boards.GetRoleAsync(current.BoardId, assignee, ct) is null)
+            await boards.GetRoleAsync(current.BoardId, assignee, ct) is not (Role.Member or Role.Owner))
         {
-            return Result.Fail<WorkItem>(Errors.Validation("Assignee must be a member of the board."));
+            return Result.Fail<WorkItem>(Errors.Validation("Assignee must be a task-managing board member."));
         }
 
         return await PersistAsync(loaded.Map(i => i with { AssigneeId = assigneeId }), ct);
     }
 
+    public async Task<Result<WorkItem>> EditAsync(
+        Guid itemId, string? title, Priority priority, int estimateHours, Guid userId, CancellationToken ct)
+    {
+        var loaded = await LoadOwnerEditableAsync(itemId, userId, ct);
+        return await PersistAsync(
+            loaded.Bind(item => WorkItemRules.Edit(item, title, priority, estimateHours)), ct);
+    }
+
     public async Task<Result<WorkItem>> DeleteAsync(Guid itemId, Guid userId, CancellationToken ct)
     {
-        var loaded = await LoadEditableAsync(itemId, userId, ct);
+        var loaded = await LoadOwnerEditableAsync(itemId, userId, ct);
         if (loaded is Result<WorkItem>.Ok ok) await items.DeleteAsync(ok.Value.Id, ct);
         return loaded;
     }
 
-    private async Task<Result<WorkItem>> LoadEditableAsync(Guid itemId, Guid userId, CancellationToken ct)
+    private async Task<Result<WorkItem>> LoadOwnerEditableAsync(Guid itemId, Guid userId, CancellationToken ct)
     {
         var item = await items.GetAsync(itemId, ct);
         if (item is null) return Result.Fail<WorkItem>(Errors.NotFound);
 
         var role = await boards.GetRoleAsync(item.BoardId, userId, ct);
-        return Permissions.CanEdit(role) ? Result.Ok(item) : Result.Fail<WorkItem>(Errors.Forbidden);
+        return Permissions.CanManageTasks(role) ? Result.Ok(item) : Result.Fail<WorkItem>(Errors.Forbidden);
     }
 
     private async Task<Result<WorkItem>> PersistAsync(Result<WorkItem> result, CancellationToken ct)

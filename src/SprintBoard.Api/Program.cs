@@ -1,6 +1,8 @@
 // src/SprintBoard.Api/Program.cs  (replace the template)
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SprintBoard.Api;
 using SprintBoard.Api.Endpoints;
@@ -23,6 +25,7 @@ builder.Services.AddIdentityCore<AppUser>(o =>
     o.Password.RequiredLength = 8;
     o.User.RequireUniqueEmail = true;
 }).AddEntityFrameworkStores<AppDbContext>();
+builder.Services.AddSingleton<ILookupNormalizer, CaseSensitiveLookupNormalizer>();
 
 builder.Services.AddSingleton<TokenService>();
 
@@ -61,7 +64,13 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+    await db.Users.ExecuteUpdateAsync(users => users
+        .SetProperty(user => user.NormalizedEmail, user => user.Email)
+        .SetProperty(user => user.NormalizedUserName, user => user.UserName));
+}
 
 app.UseExceptionHandler();   // unexpected exceptions become a clean ProblemDetails response
 app.UseCors();
